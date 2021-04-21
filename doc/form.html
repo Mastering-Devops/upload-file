@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>A File Upload Demo</title>
+</head>
+<body>
+<div class="aligner">
+    <input type="file" id="drop">
+    <div id="list">
+        <h1>Uploaded Files:</h1>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var drop = document.getElementById('drop');
+    var list = document.getElementById('list');
+    var apiBaseURL = "upload/image";
+
+
+    function handleDrop(e) {
+        var files = e.target.files;
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var reader = new FileReader();
+            reader.addEventListener('loadend', function (e) {
+                fetch(apiBaseURL, {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        file_name: file.name,
+                        file_type: file.type,
+                        application_path: 'pepe/question',
+                        size: [
+                            {
+                                type: 'small'
+                            }, {
+                                type: 'large'
+                            }, {
+                                type: 'custom',
+                                resolution: 500
+                            }
+                        ]
+                    })
+                })
+                    .then(function (response) {
+                        return response.json();
+                    })
+                    .then(function (json) {
+                        return fetch(json.data.uploadURL, {
+                            method: "PUT",
+                            body: new Blob([reader.result], {type: file.type})
+                        })
+                    })
+                    .then(function () {
+                        var uploadedFileNode = document.createElement('div');
+                        uploadedFileNode.innerHTML = '<a href="//s3.amazonaws.com/slsuploadapi/' + file.name + '">' + file.name + '</a>';
+                        list.appendChild(uploadedFileNode);
+                    });
+            });
+            reader.readAsArrayBuffer(file);
+        }
+        return false;
+    }
+
+    // Tells the browser that we *can* drop on this target
+    drop.addEventListener('change', handleDrop);
+
+</script>
+</body>
+</html>

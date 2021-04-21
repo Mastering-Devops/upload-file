@@ -1,0 +1,23 @@
+{
+  "name": "upload_file",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --coverage",
+    "build": "tsc",
+    "lint": "tslint -c tslint.json 'src/**/*.ts*'",
+    "lint-fix": "tslint -c tslint.json --fix 'src/**/*.ts*'"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "gm": "^1.23.1",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.430.0",
+    "serverless-offline": "^4.9.2",
+    "serverless-plugin-existing-s3": "^2.3.3"
+  }
+}

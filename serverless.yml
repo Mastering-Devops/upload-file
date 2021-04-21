@@ -1,0 +1,109 @@
+
+service: ${self:custom.serviceName}
+
+plugins:
+  - serverless-offline
+  - serverless-plugin-existing-s3
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: us-east-1
+  environment:
+    REGION: ${self:provider.region}
+    UPLOAD_FILE_DB: ${self:custom.serviceName}-db
+    UPLOAD_FILE_STORAGE: ${self:custom.serviceName}-storage
+
+  iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "s3:*"
+        Resource: "arn:aws:s3:::${self:provider.environment.UPLOAD_FILE_STORAGE}/*"
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:GetItem"
+          - "dynamodb:PutItem"
+          - "dynamodb:UpdateItem"
+          - "dynamodb:DeleteItem"
+        Resource:
+          - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.UPLOAD_FILE_DB}"
+
+custom:
+  serviceName: upload-image
+  stage: ${opt:stage, self:custom.defaultStage}
+  bucket: bucket-upload-file
+  defaultStage: dev
+  stages:
+    - ${opt:stage}
+    - dev
+    - production
+
+
+functions:
+  document:
+    handler: src/handler/static.document
+    events:
+      - http:
+          path: doc
+          method: get
+
+  form:
+    handler: src/handler/static.form
+    events:
+      - http:
+          path: form
+          method: get
+
+  upload_image:
+    handler: src/handler/upload.image
+    events:
+      - http:
+          path: upload/image
+          method: post
+          cors: true
+
+  ResizeImage:
+    handler: src/handler/resize.image
+    timeout: 290
+    events:
+      - existingS3:
+          bucket: ${self:provider.environment.UPLOAD_FILE_STORAGE}
+          events:
+            - s3:ObjectCreated:*
+
+
+resources:
+  Resources:
+    UploadFileBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.UPLOAD_FILE_STORAGE}
+        AccessControl: PublicRead
+        CorsConfiguration:
+          CorsRules:
+          - AllowedMethods:
+            - GET
+            - PUT
+            - POST
+            - HEAD
+            AllowedOrigins:
+            - "*"
+            AllowedHeaders:
+            - "*"
+
+    FileUploadInfo:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "fileId"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "fileId"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.UPLOAD_FILE_DB}
+
+
+package: ${file(sls_pkg_exclude.yml)}
