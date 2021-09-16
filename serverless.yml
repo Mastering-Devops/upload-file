@@ -1,10 +1,6 @@
 
 service: ${self:custom.serviceName}
 
-plugins:
-  - serverless-offline
-  - serverless-plugin-existing-s3
-
 provider:
   name: aws
   runtime: nodejs12.x
@@ -29,7 +25,7 @@ provider:
           - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.UPLOAD_FILE_DB}"
 
 custom:
-  serviceName: upload-image
+  serviceName: upload-image-devops
   stage: ${opt:stage, self:custom.defaultStage}
   bucket: bucket-upload-file
   defaultStage: dev
